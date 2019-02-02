@@ -95,9 +95,8 @@ void build_cap_graph(SmartDigraph& cap_graph, SmartDigraph::ArcMap<double>& x_ca
 	}
 }
 
- /*  Strong Component seperation for Steiner  */
 bool separate_sc_Steiner(IloEnv masterEnv, const unordered_map<pair<NODE_PAIR, INDEX>, double>& xSol, std::shared_ptr<Graph>G,
-	const unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar> edge_vars, vector<IloExpr>& cutLhs, vector<IloExpr>& cutRhs, vector<double>& violation)
+	const unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar>& edge_vars, vector<IloExpr>& cutLhs, vector<IloExpr>& cutRhs, vector<double>& violation)
 {
 	bool ret = false;
 	pair<NODE_PAIR, INDEX>pair_ij_k;
@@ -106,14 +105,12 @@ bool separate_sc_Steiner(IloEnv masterEnv, const unordered_map<pair<NODE_PAIR, I
 	{
 		pair_ij_k.second = k;
 
-		/* Build Support subGraph */
 		SmartDigraph support_graph;
 		unordered_map<NODE, LemonNode>v_nodes;
 		map<LemonNode, NODE>rev_nodes;
 		SUB_Graph subG = G->get_subgraph()[k];
 		build_support_graph(support_graph, v_nodes, rev_nodes, xSol, G, k);
 
-		/* Search for strong components */
 		SmartDigraph::NodeMap<int> nodemap(support_graph);
 		int components = stronglyConnectedComponents(support_graph, nodemap);
 
@@ -172,8 +169,8 @@ bool separate_sc_Steiner(IloEnv masterEnv, const unordered_map<pair<NODE_PAIR, I
 }
 
 bool seperate_min_cut_Steiner(IloEnv masterEnv, const unordered_map<pair<NODE_PAIR, INDEX>, double>& xSol, std::shared_ptr<Graph>G,
-	const unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar> edge_vars, vector<IloExpr>& cutLhs, vector<IloExpr>& cutRhs, vector<double>& violation,
-	const unordered_map<INDEX, NODE>& root, const unordered_map<NODE, IloNumVar>& primal_node_vars)
+	const unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar>& edge_vars, vector<IloExpr>& cutLhs, vector<IloExpr>& cutRhs, vector<double>& violation,
+	const unordered_map<INDEX, NODE>& Steiner_root, const unordered_map<NODE, IloNumVar>& primal_node_vars)
 {
 	bool ret = false;
 	pair<NODE_PAIR, INDEX>pair_ij_k;
@@ -201,9 +198,9 @@ bool seperate_min_cut_Steiner(IloEnv masterEnv, const unordered_map<pair<NODE_PA
 		//rv_cut >= delta(v)
 		for (NODE q : subG.nodes())
 		{
-			if (q == root.at(k))
+			if (q == Steiner_root.at(k))
 				continue;
-			Preflow<SmartDigraph, SmartDigraph::ArcMap<double>>min_cut(cap_graph, x_capacities, v_nodes[root.at(k)], v_nodes[q]);
+			Preflow<SmartDigraph, SmartDigraph::ArcMap<double>>min_cut(cap_graph, x_capacities, v_nodes[Steiner_root.at(k)], v_nodes[q]);
 			min_cut.runMinCut();
 			min_cut_value = min_cut.flowValue();
 
@@ -258,3 +255,10 @@ bool seperate_min_cut_Steiner(IloEnv masterEnv, const unordered_map<pair<NODE_PA
 	return ret;
 }
 
+
+void test(const unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar>& edge_vars, const unordered_map<pair<NODE_PAIR, INDEX>, double>& xSol) {
+	for (auto k : edge_vars)
+	{
+		int a = 0;
+	}
+}

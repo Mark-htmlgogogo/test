@@ -38,10 +38,10 @@
     <ClInclude Include="graph.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="callbacks.h">
+    <ClInclude Include="separation.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="separation.h">
+    <ClInclude Include="callbacks.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

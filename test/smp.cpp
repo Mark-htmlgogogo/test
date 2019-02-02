@@ -1,5 +1,5 @@
 #include "smp.h"
-#include "callbacks.h"
+//#include "callbacks.h"
 #include "type.h"
 #include "separation.h"
 #include <iostream>
@@ -95,8 +95,8 @@ SmpSolver::SmpSolver(
 		break;
 	case STEINER:
 	case NS:
-		//cplex.use();
-		//cplex.use();
+		//cplex.use(StrongComponentLazyCallback(env, G, edge_vars, x_vararray, x_varindex_Steiner, TOL, max_cuts, formulation, Steiner_root, primal_node_vars));
+		//cplex.use(SmpCutCallback(env, G, edge_vars, x_vararray, x_varindex_Steiner, TOL, max_cuts, formulation, Steiner_root, primal_node_vars));
 	default:
 		break;
 	}
@@ -125,38 +125,6 @@ void SmpSolver::update_problem(const const unordered_map<NODE, double> &obj_coef
 /*  */
 void SmpSolver::add_constraint()
 {
-}
-
-void SmpSolver::solve()
-{
-	LOG << "--------------------- SOLVING SMP " << endl;
-
-	//double start_time = cplex.getCplexTime();
-	//double start_ticks = cplex.getDetTime();
-
-	cout << "Number of constraints: " << cplex.getNrows() << endl;
-	cout << "Number of variables(int):   " << cplex.getNintVars() << endl;
-	cout << "Number of variables(binary):   " << cplex.getNbinVars() << endl;
-	cout << "Number of variables(cols):   " << cplex.getNcols() << endl;
-
-	cplex.solve();
-
-	cout << "Solution status = " << cplex.getStatus() << endl;
-	cout << "Objectvie value = " << cplex.getObjValue() << endl;
-	for (auto var : primal_node_vars)
-		cout << var.second.getName() << "\t" << cplex.getValue(var.second) << endl;
-	for (auto var : source_node_vars)
-		cout << var.second.getName() << "\t" << cplex.getValue(var.second) << endl;
-	for (auto var : partition_node_vars)
-		cout << var.second.getName() << "\t" << cplex.getValue(var.second) << endl;
-	for (auto var : partition_flow_vars)
-		cout << var.second.getName() << "\t" << cplex.getValue(var.second) << endl;
-	for (auto var : multi_flow_vars)
-		cout << var.second.getName() << "\t" << cplex.getValue(var.second) << endl;
-	for (auto var : edge_vars)
-		cout << var.second.getName() << "\t" << cplex.getValue(var.second) << endl;
-	//elapsed_time  = cplex.getCplexTime() - start_time;
-	//elapsed_ticks = cplex.getDetTime() - start_ticks;
 }
 
 void SmpSolver::solveLP_Steiner()
@@ -194,7 +162,7 @@ void SmpSolver::solveLP_Steiner()
 			{
 				pair_ij_k.first.first = arc.first;
 				pair_ij_k.first.second = arc.second;
-				xSol[pair_ij_k] = val[x_varindex[pair_ij_k]];
+				xSol[pair_ij_k] = val[x_varindex_Steiner[pair_ij_k]];
 			}
 		}
 
@@ -791,7 +759,7 @@ void SmpSolver::build_problem_steiner()
 			var = IloNumVar(env, 0, 1, IloNumVar::Int, var_name);
 			edge_vars[pair_ij_k] = var;
 			x_vararray.add(var);
-			x_varindex[pair_ij_k] = idx++;
+			x_varindex_Steiner[pair_ij_k] = idx++;
 			model.add(var);
 			printInfo(var);
 		}
@@ -901,6 +869,73 @@ void SmpSolver::build_problem_steiner()
 /* node separator formulation */
 void SmpSolver::build_problem_ns()
 {
+	/*****************/
+	/* Add variables */
+	/*****************/
+
+	cout << "Begin to build problem ns..." << endl;
+	cout << "Begin to add variables..." << endl;
+
+	IloEnv env = model.getEnv();
+
+	char var_name[255];
+	char con_name[255];
+	int V_k_size;
+	SUB_Graph subG;
+	map<INDEX, NODE_SET> V_k_set = G->v_set();
+	map<INDEX, NODE_SET> T_k_set = G->t_set();
+	pair<NODE, INDEX> pair_i_k;
+
+	// Add varaible x_i_k
+	for (auto k : G->p_set())
+	{
+		//cout <<  "k = " << k << endl;
+		V_k_size = static_cast<int>(V_k_set[k].size());
+		subG = G->get_subgraph()[k];
+
+		// Add  x_i^k (binary), for each node in G[V_k]:
+		pair_i_k.second = k;
+		for (auto i : subG.nodes())
+		{
+			IloNumVar var;
+			snprintf(var_name, 255, "x_%d^%d", i, k);
+			if (T_k_set[k].find(i) != T_k_set[k].end())
+			{
+				var = IloNumVar(env, 1, 1, IloNumVar::Int, var_name);
+			}
+
+			else
+			{
+				var = IloNumVar(env, 0, 1, IloNumVar::Bool, var_name);
+			}
+			pair_i_k.first = i;
+			partition_node_vars[pair_i_k] = var;
+			printInfo(var);
+		}
+	}
+
+	/*******************/
+	/* Add constraints */
+	/*******************/
+
+	cout << "Begin to add constraints..." << endl;
+	for (auto i : G->nodes())
+	{
+		string con_name_26 = "";
+		IloExpr sigmax_i_k(env);
+		for (auto k : G->p_set())
+		{
+			pair_i_k.first = i;
+			pair_i_k.second = k;
+			sigmax_i_k += partition_node_vars[pair_i_k];
+			con_name_26 = con_name_26 + partition_node_vars[pair_i_k].getName();
+		}
+		snprintf(con_name, 255, "%s >= %s", primal_node_vars[i].getName(), 
+			con_name_26.c_str());
+		cout << con_name << endl;
+		model.add(primal_node_vars[i] >= sigmax_i_k);
+	}
+
 }
 
 /* frequent used function */

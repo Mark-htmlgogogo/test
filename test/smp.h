@@ -52,7 +52,7 @@ private:
 
 	/* STRINER */
 	unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar> edge_vars;			  //y_ij_k
-	unordered_map <pair< NODE_PAIR, INDEX>, int> x_varindex;
+	unordered_map<pair<NODE_PAIR, INDEX>, int> x_varindex_Steiner;
 	unordered_map<INDEX, NODE> Steiner_root;
 
 	IloModel model;

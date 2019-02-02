@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __separation_h__
+#define __separation_h__
 
 #include "smp.h"
 #include "graph.h"
@@ -25,8 +26,12 @@ void build_cap_graph(SmartDigraph& cap_graph, SmartDigraph::ArcMap<double>& x_ca
 	const unordered_map<NODE_PAIR, double>& xSol, std::shared_ptr<Graph>, INDEX k);
 
 bool separate_sc_Steiner(IloEnv masterEnv, const unordered_map<pair<NODE_PAIR,INDEX>, double>& xSol, std::shared_ptr<Graph>,
-	const unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar> edge_vars, vector<IloExpr>& cutLhs, vector<IloExpr>& cutRhs, vector<double>& violation);
+	const unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar>& edge_vars, vector<IloExpr>& cutLhs, vector<IloExpr>& cutRhs, vector<double>& violation);
 
 bool seperate_min_cut_Steiner(IloEnv masterEnv, const unordered_map<pair<NODE_PAIR, INDEX>, double>& xSol, std::shared_ptr<Graph>,
-	const unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar> edge_vars, vector<IloExpr>& cutLhs, vector<IloExpr>& cutRhs, vector<double>& violation,
-	const unordered_map<INDEX, NODE>& root, const unordered_map<NODE, IloNumVar>& primal_node_vars);
+	const unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar>& edge_vars, vector<IloExpr>& cutLhs, vector<IloExpr>& cutRhs, vector<double>& violation,
+	const unordered_map<INDEX, NODE>& Steiner_root, const unordered_map<NODE, IloNumVar>& primal_node_vars);
+
+void test(const unordered_map<pair<NODE_PAIR, INDEX>, IloNumVar>& edge_vars, const unordered_map<pair<NODE_PAIR, INDEX>, double>& xSol);
+
+#endif
